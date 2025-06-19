@@ -1,0 +1,35 @@
+services:
+  hledger-ruble:
+    container_name: hledger-ruble
+    image: dastapov/hledger:latest
+    volumes:
+      - ${HOME}/.hledger/hledger.journal:/data/hledger.journal:rw
+    environment:
+      HLEDGER_JOURNAL_FILE: /data/hledger.journal
+      HLEDGER_ARGS: -X₽ --infer-market-prices --capabilities=view,add,manage
+      HLEDGER_BASE_URL: https://${HLEDGER_BASE_URL}
+    networks:
+      - hledger-ruble-network
+
+  hledger-ruble-nginx:
+    container_name: hledger-ruble-nginx
+    image: nginx
+    build: .
+    environment:
+      NGINX_PORT: 80
+      NGINX_HOST: ${HLEDGER_BASE_URL}
+      NGINX_PROXY_PASS: http://hledger-ruble:5000
+      VIRTUAL_PORT: 80
+      VIRTUAL_HOST: ${HLEDGER_BASE_URL}
+      LETSENCRYPT_HOST: ${HLEDGER_BASE_URL}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    depends_on:
+      - hledger-ruble
+    networks:
+      - hledger-ruble-network
+
+  
+networks:
+  hledger-ruble-network:
+    name: hledger-ruble-network
+    driver: bridge

@@ -1,0 +1,35 @@
+services:
+  hledger-multi:
+    container_name: hledger-multi
+    image: dastapov/hledger:latest
+    volumes:
+      - ${HOME}/.hledger/hledger.journal:/data/hledger.journal:rw
+    environment:
+      HLEDGER_JOURNAL_FILE: /data/hledger.journal
+      HLEDGER_ARGS: --capabilities=view,add,manage
+      HLEDGER_BASE_URL: https://${HLEDGER_BASE_URL}
+    networks:
+      - hledger-multi-network
+
+  hledger-multi-nginx:
+    container_name: hledger-multi-nginx
+    image: nginx
+    build: .
+    environment:
+      NGINX_PORT: 80
+      NGINX_MULTI_HOST: ${HLEDGER_BASE_URL}
+      NGINX_MULTI_PROXY_PASS: http://hledger-multi:5000
+      VIRTUAL_PORT: 80
+      VIRTUAL_HOST: ${HLEDGER_BASE_URL}
+      LETSENCRYPT_HOST: ${HLEDGER_BASE_URL}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    depends_on:
+      - hledger-multi
+    networks:
+      - hledger-multi-network
+
+  
+networks:
+  hledger-multi-network:
+    name: hledger-multi-network
+    driver: bridge
